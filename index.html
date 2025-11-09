@@ -1,318 +1,311 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="id">
 <head>
-  <meta charset="utf-8" />
-  <title>kARies — WebXR (no marker)</title>
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta charset="UTF-8">
+  <title>kARies - AR Edukasi Gigi</title>
+
+  <!-- A-Frame + AR.js -->
+  <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/gh/AR-js-org/AR.js/aframe/build/aframe-ar.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/aframe-extras@6.1.1/dist/aframe-extras.min.js"></script>
+
   <style>
-    html,body{margin:0;height:100%;overflow:hidden;font-family:"Poppins",sans-serif;background:#f0f4f9;}
-    canvas{display:block; position:fixed; inset:0; z-index:0;}
-    /* UI overlay */
-    #ui{position:absolute; inset:0; display:flex; flex-direction:column; justify-content:flex-end; align-items:center; pointer-events:none; z-index:20;}
-    #bars{position:absolute; top:18px; display:flex; flex-direction:column; gap:8px; align-items:center; pointer-events:none; width:calc(100% - 32px); max-width:420px;}
-    .status-bar{display:flex; align-items:center; background:rgba(60,60,60,0.85); border-radius:18px; padding:6px 10px; min-width:240px; height:32px; box-shadow:0 3px 6px rgba(0,0,0,0.18);}
-    .status-icon{width:26px;height:26px;margin-right:8px;}
-    .status-label{color:#fff;font-size:13px;font-weight:600;margin-right:10px;min-width:80px;}
-    .bar-fill{flex:1;height:22px;border-radius:12px;background:#444;overflow:hidden;position:relative;}
-    .bar-inner{height:100%;width:100%;border-radius:12px;transition:width .35s ease;}
-    .clean .bar-inner{background:linear-gradient(to right,#4fc3f7,#0288d1);}
-    .health .bar-inner{background:linear-gradient(to right,#ef9a9a,#e57373);}
-    .bar-inner.damage{animation:blinkRed .45s ease;}
-    @keyframes blinkRed{0%,100%{filter:brightness(1);}50%{filter:brightness(2);}}
+    body {
+      margin: 0;
+      overflow: hidden;
+      font-family: "Poppins", sans-serif;
+      background: #f0f4f9;
+    }
 
-    #buttons{width:100%;max-width:420px;display:flex;gap:18px;justify-content:center;margin-bottom:20px;pointer-events:auto;}
-    .action-btn{display:flex;flex-direction:column;align-items:center;background:none;border:none;cursor:pointer;transition:transform .12s ease;pointer-events:auto;}
-    .action-btn img{width:62px;height:62px;border-radius:50%;padding:8px;background:#fff;box-shadow:0 3px 8px rgba(0,0,0,0.22);margin-bottom:6px;object-fit:contain;}
-    .action-btn span{font-size:13px;font-weight:600;color:#fff;text-shadow:0 1px 4px rgba(0,0,0,0.35);}
-    .action-btn.brush img{background:#b2e8ff;} .action-btn.healthy img{background:#c8f7c2;} .action-btn.sweet img{background:#ffd4e1;}
+    a-scene {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+    }
 
-    #infoText{background:rgba(255,255,255,0.95);border-radius:12px;padding:8px 12px;margin-bottom:12px;font-size:13px;font-weight:500;color:#0b4f8a;box-shadow:0 2px 10px rgba(0,0,0,0.12);text-align:center;max-width:360px;pointer-events:auto;transition:opacity .22s ease;}
+    /* === UI OVERLAY === */
+    #ui {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-end;
+      align-items: center;
+      pointer-events: none;
+    }
 
-    #topStatus{position:absolute;left:12px;top:12px;z-index:21;background:rgba(255,255,255,0.95);padding:8px 10px;border-radius:10px;box-shadow:0 6px 18px rgba(0,0,0,0.08);color:#0b4f8a;font-weight:600;}
-    #fallbackInfo{position:absolute;left:12px;top:60px;z-index:21;background:rgba(255,255,255,0.95);padding:8px 10px;border-radius:10px;box-shadow:0 6px 18px rgba(0,0,0,0.08);color:#b33;font-weight:600;display:none;max-width:calc(100% - 24px);}
+    /* === STATUS BAR CONTAINER === */
+    #bars {
+      position: absolute;
+      top: 25px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      width: auto;
+      align-items: center;
+      pointer-events: none;
+    }
 
-    @media (max-width:420px){ .status-bar{min-width:220px;height:28px;padding:5px 8px;} .status-label{min-width:60px;font-size:12px;} .action-btn img{width:54px;height:54px;padding:6px;} }
+    .status-bar {
+      display: flex;
+      align-items: center;
+      background: rgba(60, 60, 60, 0.9);
+      border-radius: 20px;
+      padding: 6px 12px;
+      min-width: 350px;
+      height: 24px;
+      box-shadow: 0 3px 6px rgba(0,0,0,0.2);
+    }
+
+    .status-icon {
+      width: 25px;
+      height: 25px;
+      margin-right: 8px;
+    }
+
+    .status-label {
+      color: #fff;
+      font-size: 13px;
+      font-weight: 600;
+      margin-right: 10px;
+      min-width: 75px;
+    }
+
+    .bar-fill {
+      flex: 1;
+      height: 20px;
+      border-radius: 10px;
+      background: #555;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .bar-inner {
+      height: 100%;
+      width: 100%;
+      border-radius: 10px;
+      transition: width 0.3s ease;
+    }
+
+    /* warna bar */
+    .clean .bar-inner {
+      background: linear-gradient(to right, #4fc3f7, #0288d1);
+    }
+
+    .health .bar-inner {
+      background: linear-gradient(to right, #ef9a9a, #e57373);
+    }
+
+    /* animasi health damage */
+    .bar-inner.damage {
+      animation: blinkRed 0.4s ease;
+    }
+
+    @keyframes blinkRed {
+      0%, 100% { filter: brightness(1); }
+      50% { filter: brightness(2); }
+    }
+
+    /* === BUTTONS === */
+    #buttons {
+      width: 100%;
+      max-width: 400px;
+      display: flex;
+      gap: 30px;
+      justify-content: center;
+      margin-bottom: 25px;
+      pointer-events: auto;
+    }
+
+    .action-btn {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      background: none;
+      border: none;
+      cursor: pointer;
+      transition: transform 0.15s ease;
+    }
+
+    .action-btn:hover {
+      transform: translateY(-3px);
+    }
+
+    .action-btn:active {
+      transform: scale(0.9);
+      transition: transform 0.05s ease;
+    }
+
+    .action-btn img {
+      width: 65px;
+      height: 65px;
+      border-radius: 50%;
+      box-shadow: 0 3px 8px rgba(0,0,0,0.25);
+      margin-bottom: 4px;
+      object-fit: contain;
+      padding: 10px;
+      background: #fff;
+      filter: drop-shadow(0 0 6px rgba(0,0,0,0.3));
+    }
+
+    .action-btn span {
+      font-size: 13px;
+      font-weight: 600;
+      color: #fff;
+      text-shadow: 0 1px 4px rgba(0,0,0,0.4);
+    }
+
+    /* === WARNA LATAR BULATAN IKON === */
+    .action-btn.brush img { background: #b2e8ff; }
+    .action-btn.healthy img { background: #c8f7c2; }
+    .action-btn.sweet img { background: #ffd4e1; }
+
+    /* === INFO TEXT === */
+    #infoText {
+      background: rgba(255, 255, 255, 0.9);
+      border-radius: 15px;
+      padding: 8px 14px;
+      margin-bottom: 15px;
+      font-size: 13px;
+      font-weight: 500;
+      color: #0b4f8a;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.15);
+      text-align: center;
+      max-width: 380px;
+      pointer-events: auto;
+      transition: opacity 0.3s ease;
+    }
   </style>
 </head>
-<body>
-  <div id="topStatus">WebXR: checking…</div>
-  <div id="fallbackInfo">Perangkat tidak mendukung WebXR immersive-ar. Tes di Chrome Android dengan ARCore.</div>
 
-  <!-- UI overlay -->
+<body>
+  <!-- AR Scene -->
+  <a-scene embedded arjs="sourceType: webcam; debugUIEnabled: false;">
+    <a-marker type="pattern" url="marker.patt">
+      <a-entity id="tooth"
+        gltf-model="tooth.glb"
+        scale="0.5 0.5 0.5"
+        position="0 0 0"
+        animation-mixer>
+      </a-entity>
+    </a-marker>
+    <a-entity camera></a-entity>
+  </a-scene>
+
+  <!-- UI Overlay -->
   <div id="ui">
     <div id="bars">
       <div class="status-bar clean">
         <img src="icons/water.png" class="status-icon" alt="Kebersihan">
         <span class="status-label">Kebersihan</span>
-        <div class="bar-fill"><div id="cleanFill" class="bar-inner" style="width:100%"></div></div>
+        <div class="bar-fill"><div id="cleanFill" class="bar-inner"></div></div>
       </div>
 
       <div class="status-bar health">
         <img src="icons/heart.png" class="status-icon" alt="Kesehatan">
         <span class="status-label">Kesehatan</span>
-        <div class="bar-fill"><div id="healthFill" class="bar-inner" style="width:100%"></div></div>
+        <div class="bar-fill"><div id="healthFill" class="bar-inner"></div></div>
       </div>
     </div>
 
-    <div id="infoText">Jika WebXR tersedia akan muncul tombol Enter AR. Ketuk Enter AR lalu arahkan ke meja, ketuk layar untuk menempatkan model.</div>
+    <div id="infoText">Arahkan kamera ke marker untuk memulai!</div>
 
     <div id="buttons">
-      <button class="action-btn brush" id="btnBrush" onclick="setAction('brush')" disabled>
+      <button class="action-btn brush" onclick="setAction('brush')">
         <img src="icons/sikat.png" alt="Gosok Gigi">
         <span>Gosok Gigi</span>
       </button>
 
-      <button class="action-btn healthy" id="btnHealthy" onclick="setAction('healthy')" disabled>
+      <button class="action-btn healthy" onclick="setAction('healthy')">
         <img src="icons/wortel.png" alt="Makanan Sehat">
         <span>Makanan Sehat</span>
       </button>
 
-      <button class="action-btn sweet" id="btnSweet" onclick="setAction('sweet')" disabled>
+      <button class="action-btn sweet" onclick="setAction('sweet')">
         <img src="icons/permen.png" alt="Makanan Manis">
         <span>Makanan Manis</span>
       </button>
     </div>
   </div>
 
-  <!-- three.js + loader + ARButton -->
-  <script type="module">
-    import * as THREE from 'https://unpkg.com/three@0.152.2/build/three.module.js';
-    import { GLTFLoader } from 'https://unpkg.com/three@0.152.2/examples/jsm/loaders/GLTFLoader.js';
-    import { ARButton } from 'https://unpkg.com/three@0.152.2/examples/jsm/webxr/ARButton.js';
-
-    // UI refs
-    const topStatus = document.getElementById('topStatus');
-    const fallbackInfo = document.getElementById('fallbackInfo');
-    const infoText = document.getElementById('infoText');
-    const btnBrush = document.getElementById('btnBrush');
-    const btnHealthy = document.getElementById('btnHealthy');
-    const btnSweet = document.getElementById('btnSweet');
+  <script>
+    let toothModel = null;
+    const info = document.getElementById('infoText');
     const cleanFill = document.getElementById('cleanFill');
     const healthFill = document.getElementById('healthFill');
 
-    // game state
-    let cleanValue = 100, healthValue = 100, sweetCount = 0;
-    let placedAny = false;
+    let cleanValue = 100;
+    let healthValue = 100;
+    let sweetCount = 0; // hitung berapa kali makan permen
 
-    // three/webxr
-    let renderer, scene, camera, controller;
-    let reticle = null;
-    let loader, toothGltf = null;
-    let hitTestSource = null, hitTestSourceRequested = false;
-
-    // check WebXR support
-    async function checkXR() {
-      topStatus.textContent = 'WebXR: checking…';
-      if (!navigator.xr) {
-        topStatus.textContent = 'WebXR not available';
-        fallbackInfo.style.display = 'block';
-        infoText.textContent = 'Perangkat/broswer Anda tidak mendukung WebXR. Tes di Chrome Android (HTTPS).';
-        return false;
-      }
-      try {
-        const ok = await navigator.xr.isSessionSupported('immersive-ar');
-        if (!ok) {
-          topStatus.textContent = 'WebXR not supported on this device';
-          fallbackInfo.style.display = 'block';
-          infoText.textContent = 'Device tidak mendukung immersive-ar. Pastikan ARCore (Google Play Services for AR) terinstall dan Chrome updated.';
-          return false;
-        }
-        topStatus.textContent = 'WebXR supported ✅';
-        infoText.textContent = 'WebXR tersedia — tombol Enter AR akan muncul. Ketuk Enter AR lalu ketuk layar untuk men-place model.';
-        return true;
-      } catch (e) {
-        topStatus.textContent = 'WebXR check failed';
-        fallbackInfo.style.display = 'block';
-        infoText.textContent = 'Gagal cek WebXR: ' + String(e);
-        return false;
-      }
-    }
-
-    // init WebXR scene if supported
-    async function initXR() {
-      renderer = new THREE.WebGLRenderer({ antialias:true, alpha:true });
-      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-      renderer.setSize(window.innerWidth, window.innerHeight);
-      renderer.xr.enabled = true;
-      renderer.setClearAlpha(0);
-      document.body.appendChild(renderer.domElement);
-
-      scene = new THREE.Scene();
-      camera = new THREE.PerspectiveCamera(70, window.innerWidth/window.innerHeight, 0.01, 20);
-
-      const light = new THREE.HemisphereLight(0xffffff, 0xbbbbff, 1);
-      scene.add(light);
-
-      // reticle preview
-      const ringGeom = new THREE.RingGeometry(0.07, 0.09, 32).rotateX(-Math.PI/2);
-      const ringMat = new THREE.MeshBasicMaterial({ color:0x00ffcc, opacity:0.9, transparent:true });
-      reticle = new THREE.Mesh(ringGeom, ringMat);
-      reticle.matrixAutoUpdate = false;
-      reticle.visible = false;
-      scene.add(reticle);
-
-      // controller
-      controller = renderer.xr.getController(0);
-      controller.addEventListener('select', onSelect);
-      scene.add(controller);
-
-      // GLTF loader -> tooth.glb (must be in repo root)
-      loader = new GLTFLoader();
-      loader.load('tooth.glb',
-        (gltf) => {
-          toothGltf = gltf.scene;
-          toothGltf.scale.set(0.4,0.4,0.4);
-          console.log('tooth.glb loaded');
-        },
-        undefined,
-        (err) => {
-          console.error('GLTF load error', err);
-          infoText.textContent = 'Gagal memuat model (tooth.glb). Pastikan berada di root repo dan nama benar.';
-        }
-      );
-
-      // AR button
-      const arBtn = ARButton.createButton(renderer, { requiredFeatures:['hit-test'] });
-      document.body.appendChild(arBtn);
-
-      window.addEventListener('resize', onWindowResize);
-      renderer.setAnimationLoop(render);
-    }
-
-    function onWindowResize() {
-      if (!camera || !renderer) return;
-      camera.aspect = window.innerWidth / window.innerHeight;
-      camera.updateProjectionMatrix();
-      renderer.setSize(window.innerWidth, window.innerHeight);
-    }
-
-    // when user taps in AR session
-    function onSelect() {
-      if (!reticle || !reticle.visible) {
-        fadeInfo('Pindahkan kamera sedikit sampai reticle muncul di permukaan.');
-        return;
-      }
-      if (!toothGltf) {
-        fadeInfo('Model belum siap, tunggu sebentar...');
-        return;
-      }
-      const placed = toothGltf.clone(true);
-      placed.matrixAutoUpdate = false;
-      placed.applyMatrix4(reticle.matrix);
-      scene.add(placed);
-      placedAny = true;
-      fadeInfo('Model ditempatkan! Tombol aktif.');
-      enableButtons(true);
+    document.addEventListener('DOMContentLoaded', () => {
+      const modelEl = document.querySelector('#tooth');
+      modelEl.addEventListener('model-loaded', () => {
+        toothModel = modelEl;
+        fadeInfo("Model gigi siap! Pilih aksi di bawah ini.");
+      });
       updateBars();
-    }
+    });
 
-    // render loop
-    function render(timestamp, frame) {
-      if (frame) {
-        const session = renderer.xr.getSession();
-        if (!hitTestSourceRequested) {
-          session.requestReferenceSpace('viewer').then((viewerSpace) => {
-            session.requestHitTestSource({ space: viewerSpace }).then((source) => {
-              hitTestSource = source;
-            });
-          });
-          session.addEventListener('end', () => {
-            hitTestSourceRequested = false;
-            hitTestSource = null;
-            reticle.visible = false;
-          });
-          hitTestSourceRequested = true;
-        }
-
-        if (hitTestSource) {
-          const refSpace = renderer.xr.getReferenceSpace();
-          const hitTestResults = frame.getHitTestResults(hitTestSource);
-          if (hitTestResults.length > 0) {
-            const hit = hitTestResults[0];
-            const pose = hit.getPose(refSpace);
-            if (pose) {
-              reticle.visible = true;
-              reticle.matrix.fromArray(pose.transform.matrix);
-            } else {
-              reticle.visible = false;
-            }
-          } else {
-            reticle.visible = false;
-          }
-        }
-      }
-      renderer.render(scene, camera);
-    }
-
-    function fadeInfo(text, ms = 220) {
-      infoText.style.opacity = 0;
-      setTimeout(() => { infoText.textContent = text; infoText.style.opacity = 1; }, ms);
-    }
-
-    function enableButtons(enable) {
-      btnBrush.disabled = !enable;
-      btnHealthy.disabled = !enable;
-      btnSweet.disabled = !enable;
+    function fadeInfo(text) {
+      info.style.opacity = 0;
+      setTimeout(() => {
+        info.textContent = text;
+        info.style.opacity = 1;
+      }, 250);
     }
 
     function updateBars() {
-      cleanValue = Math.max(0, Math.min(100, cleanValue));
-      healthValue = Math.max(0, Math.min(100, healthValue));
-      cleanFill.style.width = cleanValue + '%';
-      healthFill.style.width = healthValue + '%';
+      cleanFill.style.width = cleanValue + "%";
+      healthFill.style.width = healthValue + "%";
     }
 
-    function addHealthDamageFlash() {
-      const el = document.querySelector('.health .bar-inner');
-      if (!el) return;
-      el.classList.add('damage');
-      setTimeout(() => el.classList.remove('damage'), 500);
-    }
+    function setAction(action) {
+      if (!toothModel) return;
 
-    // setAction preserved — requires model placed
-    window.setAction = function(action) {
-      if (!placedAny) {
-        fadeInfo('Tempatkan model dulu (ketuk layar saat AR aktif) baru gunakan tombol.');
-        return;
-      }
-      switch(action) {
+      switch (action) {
         case 'brush':
-          cleanValue = 100; healthValue = 100; sweetCount = 0;
-          fadeInfo('🪥 Gigi bersih total! Sehat kembali ✨'); break;
-        case 'sweet':
-          cleanValue -= 12.5; sweetCount++;
-          if (sweetCount >= 2) { sweetCount = 0; healthValue -= 25; addHealthDamageFlash(); fadeInfo('⚠️ Terlalu sering makan manis! Kesehatan menurun!'); }
-          else { fadeInfo('🍭 Gula menempel! Kebersihan menurun sedikit...'); }
+          cleanValue = 100;
+          healthValue = 100;
+          sweetCount = 0;
+          fadeInfo("🪥 Gigi bersih total! Sehat kembali ✨");
           break;
+
+        case 'sweet':
+          cleanValue -= 12.5;
+          sweetCount++;
+          if (sweetCount >= 2) {
+            sweetCount = 0;
+            healthValue -= 25;
+            document.querySelector('.health .bar-inner').classList.add('damage');
+            fadeInfo("⚠️ Terlalu sering makan manis! Kesehatan menurun!");
+            setTimeout(() => {
+              document.querySelector('.health .bar-inner').classList.remove('damage');
+            }, 500);
+          } else {
+            fadeInfo("🍭 Gula menempel! Kebersihan menurun sedikit...");
+          }
+          break;
+
         case 'healthy':
-          fadeInfo('🥦 Makanan sehat baik untuk gigi, namun harus tetap menggosok gigi ya!'); break;
+          fadeInfo("🥦 Makanan sehat baik untuk gigi, namun harus tetap menggosok gigi ya!");
+          break;
       }
+
+      cleanValue = Math.max(0, cleanValue);
+      healthValue = Math.max(0, healthValue);
       updateBars();
-      if (healthValue <= 0) fadeInfo('💀 Gigi rusak total! Yuk sikat gigi untuk memulihkannya!');
-    };
 
-    // start
-    (async () => {
-      const ok = await checkXR();
-      if (ok) {
-        await initXR();
-      } else {
-        // no WebXR: show friendly fallback message
-        fallbackInfo.style.display = 'block';
-        enableButtons(false);
+      if (healthValue <= 0) {
+        fadeInfo("💀 Gigi rusak total! Yuk sikat gigi untuk memulihkannya!");
       }
-    })();
-
-    // debug helper accessible in console: await kARiesDebug()
-    window.kARiesDebug = async function() {
-      const res = { navigatorXR: !!navigator.xr };
-      try { res.immersiveAR = await (navigator.xr && navigator.xr.isSessionSupported ? navigator.xr.isSessionSupported('immersive-ar') : false); } catch(e) { res.immersiveAR = 'err:'+e; }
-      try {
-        const head = await fetch('tooth.glb', {method:'HEAD'}); res.tooth = head.status;
-      } catch(e) { res.tooth = 'err'; }
-      console.log('kARiesDebug', res);
-      return res;
-    };
+    }
   </script>
 </body>
 </html>
