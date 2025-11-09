@@ -2,95 +2,95 @@
 <html lang="id">
 <head>
   <meta charset="utf-8" />
-  <title>kARies — WebXR Plane Placement (Full, No Marker)</title>
+  <title>kARies — WebXR (no marker)</title>
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <style>
-    html,body { margin:0; height:100%; overflow:hidden; font-family:"Poppins",sans-serif; background:#f0f4f9; }
-    canvas { display:block; position:fixed; inset:0; z-index:0; }
+    html,body{margin:0;height:100%;overflow:hidden;font-family:"Poppins",sans-serif;background:#f0f4f9;}
+    canvas{display:block; position:fixed; inset:0; z-index:0;}
     /* UI overlay */
-    #ui { position: absolute; inset:0; display:flex; flex-direction:column; justify-content:flex-end; align-items:center; pointer-events:none; z-index:10; }
-    #bars { position:absolute; top:18px; display:flex; flex-direction:column; gap:8px; align-items:center; pointer-events:none; width:calc(100% - 32px); max-width:420px; }
-    .status-bar{ display:flex; align-items:center; background:rgba(60,60,60,0.85); border-radius:18px; padding:6px 10px; min-width:240px; height:32px; box-shadow:0 3px 6px rgba(0,0,0,0.18); }
-    .status-icon{ width:26px; height:26px; margin-right:8px; }
-    .status-label{ color:#fff; font-size:13px; font-weight:600; margin-right:10px; min-width:80px; }
-    .bar-fill{ flex:1; height:22px; border-radius:12px; background:#444; overflow:hidden; position:relative; }
-    .bar-inner{ height:100%; width:100%; border-radius:12px; transition:width .35s ease; }
-    .clean .bar-inner{ background:linear-gradient(to right,#4fc3f7,#0288d1); }
-    .health .bar-inner{ background:linear-gradient(to right,#ef9a9a,#e57373); }
-    .bar-inner.damage{ animation: blinkRed .45s ease; }
-    @keyframes blinkRed{ 0%,100%{filter:brightness(1);} 50%{filter:brightness(2);} }
+    #ui{position:absolute; inset:0; display:flex; flex-direction:column; justify-content:flex-end; align-items:center; pointer-events:none; z-index:20;}
+    #bars{position:absolute; top:18px; display:flex; flex-direction:column; gap:8px; align-items:center; pointer-events:none; width:calc(100% - 32px); max-width:420px;}
+    .status-bar{display:flex; align-items:center; background:rgba(60,60,60,0.85); border-radius:18px; padding:6px 10px; min-width:240px; height:32px; box-shadow:0 3px 6px rgba(0,0,0,0.18);}
+    .status-icon{width:26px;height:26px;margin-right:8px;}
+    .status-label{color:#fff;font-size:13px;font-weight:600;margin-right:10px;min-width:80px;}
+    .bar-fill{flex:1;height:22px;border-radius:12px;background:#444;overflow:hidden;position:relative;}
+    .bar-inner{height:100%;width:100%;border-radius:12px;transition:width .35s ease;}
+    .clean .bar-inner{background:linear-gradient(to right,#4fc3f7,#0288d1);}
+    .health .bar-inner{background:linear-gradient(to right,#ef9a9a,#e57373);}
+    .bar-inner.damage{animation:blinkRed .45s ease;}
+    @keyframes blinkRed{0%,100%{filter:brightness(1);}50%{filter:brightness(2);}}
 
-    #buttons{ width:100%; max-width:420px; display:flex; gap:18px; justify-content:center; margin-bottom:20px; pointer-events:auto; }
-    .action-btn{ display:flex; flex-direction:column; align-items:center; background:none; border:none; cursor:pointer; transition:transform .12s ease; pointer-events:auto; }
-    .action-btn img{ width:62px; height:62px; border-radius:50%; padding:8px; background:#fff; box-shadow:0 3px 8px rgba(0,0,0,0.22); margin-bottom:6px; object-fit:contain; }
-    .action-btn span{ font-size:13px; font-weight:600; color:#fff; text-shadow:0 1px 4px rgba(0,0,0,0.35); }
-    .action-btn.brush img{ background:#b2e8ff; } .action-btn.healthy img{ background:#c8f7c2; } .action-btn.sweet img{ background:#ffd4e1; }
+    #buttons{width:100%;max-width:420px;display:flex;gap:18px;justify-content:center;margin-bottom:20px;pointer-events:auto;}
+    .action-btn{display:flex;flex-direction:column;align-items:center;background:none;border:none;cursor:pointer;transition:transform .12s ease;pointer-events:auto;}
+    .action-btn img{width:62px;height:62px;border-radius:50%;padding:8px;background:#fff;box-shadow:0 3px 8px rgba(0,0,0,0.22);margin-bottom:6px;object-fit:contain;}
+    .action-btn span{font-size:13px;font-weight:600;color:#fff;text-shadow:0 1px 4px rgba(0,0,0,0.35);}
+    .action-btn.brush img{background:#b2e8ff;} .action-btn.healthy img{background:#c8f7c2;} .action-btn.sweet img{background:#ffd4e1;}
 
-    #infoText{ background:rgba(255,255,255,0.95); border-radius:12px; padding:8px 12px; margin-bottom:12px; font-size:13px; font-weight:500; color:#0b4f8a; box-shadow:0 2px 10px rgba(0,0,0,0.12); text-align:center; max-width:360px; pointer-events:auto; transition:opacity .22s ease; }
+    #infoText{background:rgba(255,255,255,0.95);border-radius:12px;padding:8px 12px;margin-bottom:12px;font-size:13px;font-weight:500;color:#0b4f8a;box-shadow:0 2px 10px rgba(0,0,0,0.12);text-align:center;max-width:360px;pointer-events:auto;transition:opacity .22s ease;}
 
-    #statusTop{ position:absolute; left:12px; top:12px; z-index:11; background:rgba(255,255,255,0.95); padding:8px 10px; border-radius:10px; box-shadow:0 6px 18px rgba(0,0,0,0.08); color:#0b4f8a; font-weight:600; display:none; }
+    #topStatus{position:absolute;left:12px;top:12px;z-index:21;background:rgba(255,255,255,0.95);padding:8px 10px;border-radius:10px;box-shadow:0 6px 18px rgba(0,0,0,0.08);color:#0b4f8a;font-weight:600;}
+    #fallbackInfo{position:absolute;left:12px;top:60px;z-index:21;background:rgba(255,255,255,0.95);padding:8px 10px;border-radius:10px;box-shadow:0 6px 18px rgba(0,0,0,0.08);color:#b33;font-weight:600;display:none;max-width:calc(100% - 24px);}
 
-    #debug { position: absolute; left:12px; bottom: 12px; z-index:11; font-size:12px; color:#333; background: rgba(255,255,255,0.9); padding:6px 8px; border-radius:8px; display:none; }
-
-    @media (max-width:420px) {
-      .status-bar{ min-width:220px; height:28px; padding:5px 8px; } .status-label{ min-width:60px; font-size:12px; } .action-btn img{ width:54px; height:54px; padding:6px; }
-    }
+    @media (max-width:420px){ .status-bar{min-width:220px;height:28px;padding:5px 8px;} .status-label{min-width:60px;font-size:12px;} .action-btn img{width:54px;height:54px;padding:6px;} }
   </style>
 </head>
 <body>
-  <div id="statusTop">WebXR: checking...</div>
+  <div id="topStatus">WebXR: checking…</div>
+  <div id="fallbackInfo">Perangkat tidak mendukung WebXR immersive-ar. Tes di Chrome Android dengan ARCore.</div>
 
   <!-- UI overlay -->
   <div id="ui">
     <div id="bars">
       <div class="status-bar clean">
-        <img src="icons/water.png" class="status-icon" alt="Kebersihan" />
+        <img src="icons/water.png" class="status-icon" alt="Kebersihan">
         <span class="status-label">Kebersihan</span>
         <div class="bar-fill"><div id="cleanFill" class="bar-inner" style="width:100%"></div></div>
       </div>
+
       <div class="status-bar health">
-        <img src="icons/heart.png" class="status-icon" alt="Kesehatan" />
+        <img src="icons/heart.png" class="status-icon" alt="Kesehatan">
         <span class="status-label">Kesehatan</span>
         <div class="bar-fill"><div id="healthFill" class="bar-inner" style="width:100%"></div></div>
       </div>
     </div>
 
-    <div id="infoText">Memeriksa WebXR support — buka di Chrome Android (HTTPS) untuk AR. Jika tombol Enter AR muncul, ketuk lalu arahkan ke permukaan.</div>
+    <div id="infoText">Jika WebXR tersedia akan muncul tombol Enter AR. Ketuk Enter AR lalu arahkan ke meja, ketuk layar untuk menempatkan model.</div>
 
     <div id="buttons">
       <button class="action-btn brush" id="btnBrush" onclick="setAction('brush')" disabled>
-        <img src="icons/sikat.png" alt="Gosok Gigi" />
+        <img src="icons/sikat.png" alt="Gosok Gigi">
         <span>Gosok Gigi</span>
       </button>
+
       <button class="action-btn healthy" id="btnHealthy" onclick="setAction('healthy')" disabled>
-        <img src="icons/wortel.png" alt="Makanan Sehat" />
+        <img src="icons/wortel.png" alt="Makanan Sehat">
         <span>Makanan Sehat</span>
       </button>
+
       <button class="action-btn sweet" id="btnSweet" onclick="setAction('sweet')" disabled>
-        <img src="icons/permen.png" alt="Makanan Manis" />
+        <img src="icons/permen.png" alt="Makanan Manis">
         <span>Makanan Manis</span>
       </button>
     </div>
   </div>
 
-  <div id="debug"></div>
-
+  <!-- three.js + loader + ARButton -->
   <script type="module">
     import * as THREE from 'https://unpkg.com/three@0.152.2/build/three.module.js';
     import { GLTFLoader } from 'https://unpkg.com/three@0.152.2/examples/jsm/loaders/GLTFLoader.js';
     import { ARButton } from 'https://unpkg.com/three@0.152.2/examples/jsm/webxr/ARButton.js';
 
     // UI refs
-    const statusTop = document.getElementById('statusTop');
+    const topStatus = document.getElementById('topStatus');
+    const fallbackInfo = document.getElementById('fallbackInfo');
     const infoText = document.getElementById('infoText');
-    const debug = document.getElementById('debug');
     const btnBrush = document.getElementById('btnBrush');
     const btnHealthy = document.getElementById('btnHealthy');
     const btnSweet = document.getElementById('btnSweet');
     const cleanFill = document.getElementById('cleanFill');
     const healthFill = document.getElementById('healthFill');
 
-    // state
+    // game state
     let cleanValue = 100, healthValue = 100, sweetCount = 0;
     let placedAny = false;
 
@@ -100,45 +100,35 @@
     let loader, toothGltf = null;
     let hitTestSource = null, hitTestSourceRequested = false;
 
-    // check support
-    async function checkWebXR() {
-      statusTop.style.display = 'block';
-      statusTop.textContent = 'WebXR: checking...';
-      debug.style.display = 'none';
-
+    // check WebXR support
+    async function checkXR() {
+      topStatus.textContent = 'WebXR: checking…';
       if (!navigator.xr) {
-        statusTop.textContent = 'WebXR not available in this browser.';
-        infoText.textContent = 'Perangkat Anda tidak mendukung WebXR. Gunakan Chrome Android dengan ARCore atau gunakan fallback marker (bukan di sini).';
-        showDebug('navigator.xr not present');
+        topStatus.textContent = 'WebXR not available';
+        fallbackInfo.style.display = 'block';
+        infoText.textContent = 'Perangkat/broswer Anda tidak mendukung WebXR. Tes di Chrome Android (HTTPS).';
         return false;
       }
-
       try {
-        const supported = await navigator.xr.isSessionSupported('immersive-ar');
-        statusTop.textContent = supported ? 'WebXR supported ✅' : 'WebXR not supported ❌';
-        if (!supported) {
-          infoText.textContent = 'WebXR tidak didukung pada device ini. Pastikan Chrome Android + Google Play Services for AR (ARCore).';
-          showDebug('isSessionSupported returned false');
+        const ok = await navigator.xr.isSessionSupported('immersive-ar');
+        if (!ok) {
+          topStatus.textContent = 'WebXR not supported on this device';
+          fallbackInfo.style.display = 'block';
+          infoText.textContent = 'Device tidak mendukung immersive-ar. Pastikan ARCore (Google Play Services for AR) terinstall dan Chrome updated.';
           return false;
         }
-        infoText.textContent = 'WebXR tersedia — tombol Enter AR akan muncul. Ketuk Enter AR lalu ketuk layar untuk menempatkan model.';
-        showDebug('isSessionSupported OK');
+        topStatus.textContent = 'WebXR supported ✅';
+        infoText.textContent = 'WebXR tersedia — tombol Enter AR akan muncul. Ketuk Enter AR lalu ketuk layar untuk men-place model.';
         return true;
       } catch (e) {
-        statusTop.textContent = 'WebXR check failed';
-        infoText.textContent = 'Gagal mengecek WebXR: ' + String(e);
-        showDebug('isSessionSupported threw: ' + e);
+        topStatus.textContent = 'WebXR check failed';
+        fallbackInfo.style.display = 'block';
+        infoText.textContent = 'Gagal cek WebXR: ' + String(e);
         return false;
       }
     }
 
-    function showDebug(msg) {
-      debug.style.display = 'block';
-      debug.textContent = msg;
-      console.log('[kARies-debug]', msg);
-    }
-
-    // initialize WebXR renderer & scene
+    // init WebXR scene if supported
     async function initXR() {
       renderer = new THREE.WebGLRenderer({ antialias:true, alpha:true });
       renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
@@ -153,7 +143,7 @@
       const light = new THREE.HemisphereLight(0xffffff, 0xbbbbff, 1);
       scene.add(light);
 
-      // reticle
+      // reticle preview
       const ringGeom = new THREE.RingGeometry(0.07, 0.09, 32).rotateX(-Math.PI/2);
       const ringMat = new THREE.MeshBasicMaterial({ color:0x00ffcc, opacity:0.9, transparent:true });
       reticle = new THREE.Mesh(ringGeom, ringMat);
@@ -166,24 +156,24 @@
       controller.addEventListener('select', onSelect);
       scene.add(controller);
 
-      // loader
+      // GLTF loader -> tooth.glb (must be in repo root)
       loader = new GLTFLoader();
       loader.load('tooth.glb',
         (gltf) => {
           toothGltf = gltf.scene;
           toothGltf.scale.set(0.4,0.4,0.4);
-          showDebug('tooth.glb loaded');
+          console.log('tooth.glb loaded');
         },
         undefined,
         (err) => {
-          showDebug('Failed loading tooth.glb: ' + err);
-          infoText.textContent = 'Gagal memuat model (tooth.glb). Pastikan file ada di root repo dan nama benar.';
+          console.error('GLTF load error', err);
+          infoText.textContent = 'Gagal memuat model (tooth.glb). Pastikan berada di root repo dan nama benar.';
         }
       );
 
-      // ARButton
-      const btn = ARButton.createButton(renderer, { requiredFeatures:['hit-test'] });
-      document.body.appendChild(btn);
+      // AR button
+      const arBtn = ARButton.createButton(renderer, { requiredFeatures:['hit-test'] });
+      document.body.appendChild(arBtn);
 
       window.addEventListener('resize', onWindowResize);
       renderer.setAnimationLoop(render);
@@ -196,9 +186,10 @@
       renderer.setSize(window.innerWidth, window.innerHeight);
     }
 
+    // when user taps in AR session
     function onSelect() {
-      if (!reticle.visible) {
-        fadeInfo('Pindahkan kamera sedikit sampai reticle muncul pada permukaan.');
+      if (!reticle || !reticle.visible) {
+        fadeInfo('Pindahkan kamera sedikit sampai reticle muncul di permukaan.');
         return;
       }
       if (!toothGltf) {
@@ -210,11 +201,12 @@
       placed.applyMatrix4(reticle.matrix);
       scene.add(placed);
       placedAny = true;
-      fadeInfo('Model ditempatkan — sekarang tombol aktif.');
+      fadeInfo('Model ditempatkan! Tombol aktif.');
       enableButtons(true);
       updateBars();
     }
 
+    // render loop
     function render(timestamp, frame) {
       if (frame) {
         const session = renderer.xr.getSession();
@@ -241,6 +233,8 @@
             if (pose) {
               reticle.visible = true;
               reticle.matrix.fromArray(pose.transform.matrix);
+            } else {
+              reticle.visible = false;
             }
           } else {
             reticle.visible = false;
@@ -259,11 +253,6 @@
       btnBrush.disabled = !enable;
       btnHealthy.disabled = !enable;
       btnSweet.disabled = !enable;
-      if (enable) {
-        btnBrush.classList.remove('disabled');
-        btnHealthy.classList.remove('disabled');
-        btnSweet.classList.remove('disabled');
-      }
     }
 
     function updateBars() {
@@ -280,7 +269,7 @@
       setTimeout(() => el.classList.remove('damage'), 500);
     }
 
-    // setAction same as earlier; requires placedAny true
+    // setAction preserved — requires model placed
     window.setAction = function(action) {
       if (!placedAny) {
         fadeInfo('Tempatkan model dulu (ketuk layar saat AR aktif) baru gunakan tombol.');
@@ -302,18 +291,19 @@
       if (healthValue <= 0) fadeInfo('💀 Gigi rusak total! Yuk sikat gigi untuk memulihkannya!');
     };
 
-    // start: check support then init
-    (async function start() {
-      const ok = await checkWebXR();
+    // start
+    (async () => {
+      const ok = await checkXR();
       if (ok) {
         await initXR();
       } else {
-        // give a friendly hint for testing device
+        // no WebXR: show friendly fallback message
+        fallbackInfo.style.display = 'block';
         enableButtons(false);
       }
     })();
 
-    // debug helper accessible in console: window.kARiesDebug()
+    // debug helper accessible in console: await kARiesDebug()
     window.kARiesDebug = async function() {
       const res = { navigatorXR: !!navigator.xr };
       try { res.immersiveAR = await (navigator.xr && navigator.xr.isSessionSupported ? navigator.xr.isSessionSupported('immersive-ar') : false); } catch(e) { res.immersiveAR = 'err:'+e; }
@@ -323,9 +313,6 @@
       console.log('kARiesDebug', res);
       return res;
     };
-
-    // allow small console-check if page seems white
-    // usage: open console (chrome://inspect on device) then run: await kARiesDebug()
   </script>
 </body>
 </html>
