@@ -1,300 +1,337 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="id">
 <head>
-  <meta charset="UTF-8">
-  <title>kARies - AR Edukasi Gigi</title>
-
-  <!-- A-Frame + AR.js -->
+  <meta charset="utf-8" />
+  <title>kARies — WebXR (hit-test) + AR.js fallback</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <!-- A-Frame + AR.js (fallback) -->
   <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
   <script src="https://cdn.jsdelivr.net/gh/AR-js-org/AR.js/aframe/build/aframe-ar.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/aframe-extras@6.1.1/dist/aframe-extras.min.js"></script>
 
   <style>
-    body {
-      margin: 0;
-      overflow: hidden;
-      font-family: "Poppins", sans-serif;
-      background: #f0f4f9;
-    }
+    html,body { margin:0; height:100%; font-family:"Poppins",sans-serif; background:#f0f4f9; }
+    canvas, a-scene { position:fixed; top:0; left:0; width:100%; height:100%; }
 
-    a-scene {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-    }
-
-    /* === UI OVERLAY === */
+    /* UI (kept from original) */
     #ui {
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      display: flex;
-      flex-direction: column;
-      justify-content: flex-end;
-      align-items: center;
-      pointer-events: none;
+      position:absolute; inset:0; display:flex; flex-direction:column; justify-content:flex-end; align-items:center; pointer-events:none; z-index:20;
     }
+    #bars { position:absolute; top:18px; display:flex; flex-direction:column; gap:8px; align-items:center; pointer-events:none; width:calc(100% - 32px); max-width:420px; }
+    .status-bar{ display:flex; align-items:center; background:rgba(60,60,60,0.85); border-radius:18px; padding:6px 10px; min-width:240px; height:32px; box-shadow:0 3px 6px rgba(0,0,0,0.18); }
+    .status-icon{ width:26px; height:26px; margin-right:8px; }
+    .status-label{ color:#fff; font-size:13px; font-weight:600; margin-right:10px; min-width:80px; }
+    .bar-fill{ flex:1; height:22px; border-radius:12px; background:#444; overflow:hidden; position:relative; }
+    .bar-inner{ height:100%; width:100%; border-radius:12px; transition:width .35s ease; }
+    .clean .bar-inner{ background:linear-gradient(to right,#4fc3f7,#0288d1); }
+    .health .bar-inner{ background:linear-gradient(to right,#ef9a9a,#e57373); }
+    .bar-inner.damage{ animation: blinkRed .45s ease; }
+    @keyframes blinkRed{ 0%,100%{filter:brightness(1);} 50%{filter:brightness(2);} }
 
-    /* === STATUS BAR CONTAINER === */
-    #bars {
-      position: absolute;
-      top: 25px;
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-      width: auto;
-      align-items: center;
-      pointer-events: none;
-    }
+    #buttons{ width:100%; max-width:420px; display:flex; gap:18px; justify-content:center; margin-bottom:20px; pointer-events:auto; }
+    .action-btn{ display:flex; flex-direction:column; align-items:center; background:none; border:none; cursor:pointer; transition:transform .12s ease; }
+    .action-btn img{ width:62px; height:62px; border-radius:50%; padding:8px; background:#fff; box-shadow:0 3px 8px rgba(0,0,0,0.22); margin-bottom:6px; object-fit:contain; }
+    .action-btn span{ font-size:13px; font-weight:600; color:#fff; text-shadow:0 1px 4px rgba(0,0,0,0.35); }
+    .action-btn.brush img{ background:#b2e8ff; } .action-btn.healthy img{ background:#c8f7c2; } .action-btn.sweet img{ background:#ffd4e1; }
 
-    .status-bar {
-      display: flex;
-      align-items: center;
-      background: rgba(60, 60, 60, 0.9);
-      border-radius: 20px;
-      padding: 6px 12px;
-      min-width: 350px;
-      height: 24px;
-      box-shadow: 0 3px 6px rgba(0,0,0,0.2);
-    }
+    #infoText{ background:rgba(255,255,255,0.95); border-radius:12px; padding:8px 12px; margin-bottom:12px; font-size:13px; font-weight:500; color:#0b4f8a; box-shadow:0 2px 10px rgba(0,0,0,0.12); text-align:center; max-width:360px; pointer-events:auto; transition:opacity .22s ease; }
 
-    .status-icon {
-      width: 25px;
-      height: 25px;
-      margin-right: 8px;
-    }
+    #fallbackMsg { position:absolute; left:12px; top:12px; z-index:25; background:rgba(255,255,255,0.95); padding:8px 10px; border-radius:10px; box-shadow:0 6px 18px rgba(0,0,0,0.08); color:#0b4f8a; font-weight:600; display:none; }
 
-    .status-label {
-      color: #fff;
-      font-size: 13px;
-      font-weight: 600;
-      margin-right: 10px;
-      min-width: 75px;
-    }
+    /* keep A-Frame scene hidden when WebXR active */
+    #aframeScene.hidden { display:none !important; }
 
-    .bar-fill {
-      flex: 1;
-      height: 20px;
-      border-radius: 10px;
-      background: #555;
-      overflow: hidden;
-      position: relative;
-    }
-
-    .bar-inner {
-      height: 100%;
-      width: 100%;
-      border-radius: 10px;
-      transition: width 0.3s ease;
-    }
-
-    /* warna bar */
-    .clean .bar-inner {
-      background: linear-gradient(to right, #4fc3f7, #0288d1);
-    }
-
-    .health .bar-inner {
-      background: linear-gradient(to right, #ef9a9a, #e57373);
-    }
-
-    /* animasi health damage */
-    .bar-inner.damage {
-      animation: blinkRed 0.4s ease;
-    }
-
-    @keyframes blinkRed {
-      0%, 100% { filter: brightness(1); }
-      50% { filter: brightness(2); }
-    }
-
-    /* === BUTTONS === */
-    #buttons {
-      width: 100%;
-      max-width: 400px;
-      display: flex;
-      gap: 30px;
-      justify-content: center;
-      margin-bottom: 25px;
-      pointer-events: auto;
-    }
-
-    .action-btn {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      text-align: center;
-      background: none;
-      border: none;
-      cursor: pointer;
-      transition: transform 0.15s ease;
-    }
-
-    .action-btn:hover {
-      transform: translateY(-3px);
-    }
-
-    .action-btn:active {
-      transform: scale(0.9);
-      transition: transform 0.05s ease;
-    }
-
-    .action-btn img {
-      width: 65px;
-      height: 65px;
-      border-radius: 50%;
-      box-shadow: 0 3px 8px rgba(0,0,0,0.25);
-      margin-bottom: 4px;
-      object-fit: contain;
-      padding: 10px;
-      background: #fff;
-      filter: drop-shadow(0 0 6px rgba(0,0,0,0.3));
-    }
-
-    .action-btn span {
-      font-size: 13px;
-      font-weight: 600;
-      color: #fff;
-      text-shadow: 0 1px 4px rgba(0,0,0,0.4);
-    }
-
-    /* === WARNA LATAR BULATAN IKON === */
-    .action-btn.brush img { background: #b2e8ff; }
-    .action-btn.healthy img { background: #c8f7c2; }
-    .action-btn.sweet img { background: #ffd4e1; }
-
-    /* === INFO TEXT === */
-    #infoText {
-      background: rgba(255, 255, 255, 0.9);
-      border-radius: 15px;
-      padding: 8px 14px;
-      margin-bottom: 15px;
-      font-size: 13px;
-      font-weight: 500;
-      color: #0b4f8a;
-      box-shadow: 0 2px 10px rgba(0,0,0,0.15);
-      text-align: center;
-      max-width: 380px;
-      pointer-events: auto;
-      transition: opacity 0.3s ease;
+    @media (max-width:420px) {
+      .status-bar{ min-width:220px; height:28px; padding:5px 8px; } .status-label{ min-width:60px; font-size:12px; } .action-btn img{ width:54px; height:54px; padding:6px; }
     }
   </style>
 </head>
-
 <body>
-  <!-- AR Scene -->
-  <a-scene embedded arjs="sourceType: webcam; debugUIEnabled: false;">
+
+  <!-- WebXR canvas will be injected by Three.js when available (we don't include it here) -->
+
+  <!-- A-Frame scene (fallback) - keep it in DOM; we'll hide it when WebXR active -->
+  <a-scene id="aframeScene" embedded arjs="sourceType: webcam; debugUIEnabled: false;">
     <a-marker type="pattern" url="marker.patt">
-      <a-entity id="tooth"
-        gltf-model="tooth.glb"
-        scale="0.5 0.5 0.5"
-        position="0 0 0"
-        animation-mixer>
-      </a-entity>
+      <a-entity id="aframeTooth" gltf-model="tooth.glb" scale="0.5 0.5 0.5" position="0 0 0" animation-mixer></a-entity>
     </a-marker>
     <a-entity camera></a-entity>
   </a-scene>
 
-  <!-- UI Overlay -->
+  <!-- UI Overlay (shared) -->
   <div id="ui">
     <div id="bars">
       <div class="status-bar clean">
-        <img src="icons/water.png" class="status-icon" alt="Kebersihan">
+        <img src="icons/water.png" class="status-icon" alt="Kebersihan" />
         <span class="status-label">Kebersihan</span>
-        <div class="bar-fill"><div id="cleanFill" class="bar-inner"></div></div>
+        <div class="bar-fill"><div id="cleanFill" class="bar-inner" style="width:100%"></div></div>
       </div>
 
       <div class="status-bar health">
-        <img src="icons/heart.png" class="status-icon" alt="Kesehatan">
+        <img src="icons/heart.png" class="status-icon" alt="Kesehatan" />
         <span class="status-label">Kesehatan</span>
-        <div class="bar-fill"><div id="healthFill" class="bar-inner"></div></div>
+        <div class="bar-fill"><div id="healthFill" class="bar-inner" style="width:100%"></div></div>
       </div>
     </div>
 
-    <div id="infoText">Arahkan kamera ke marker untuk memulai!</div>
+    <div id="infoText">Arahkan kamera ke permukaan (WebXR) atau ke marker (jika fallback). Ketuk layar untuk tempatkan model.</div>
 
     <div id="buttons">
-      <button class="action-btn brush" onclick="setAction('brush')">
-        <img src="icons/sikat.png" alt="Gosok Gigi">
+      <button class="action-btn brush" id="btnBrush" onclick="setAction('brush')">
+        <img src="icons/sikat.png" alt="Gosok Gigi" />
         <span>Gosok Gigi</span>
       </button>
 
-      <button class="action-btn healthy" onclick="setAction('healthy')">
-        <img src="icons/wortel.png" alt="Makanan Sehat">
+      <button class="action-btn healthy" id="btnHealthy" onclick="setAction('healthy')">
+        <img src="icons/wortel.png" alt="Makanan Sehat" />
         <span>Makanan Sehat</span>
       </button>
 
-      <button class="action-btn sweet" onclick="setAction('sweet')">
-        <img src="icons/permen.png" alt="Makanan Manis">
+      <button class="action-btn sweet" id="btnSweet" onclick="setAction('sweet')">
+        <img src="icons/permen.png" alt="Makanan Manis" />
         <span>Makanan Manis</span>
       </button>
     </div>
   </div>
 
-  <script>
-    let toothModel = null;
-    const info = document.getElementById('infoText');
+  <div id="fallbackMsg">WebXR tidak tersedia — fallback marker akan digunakan (webcam/marker).</div>
+
+  <!-- Three.js + GLTFLoader + ARButton for WebXR -->
+  <script type="module">
+    import * as THREE from 'https://unpkg.com/three@0.152.2/build/three.module.js';
+    import { GLTFLoader } from 'https://unpkg.com/three@0.152.2/examples/jsm/loaders/GLTFLoader.js';
+    import { ARButton } from 'https://unpkg.com/three@0.152.2/examples/jsm/webxr/ARButton.js';
+
+    // UI refs (shared)
+    const infoText = document.getElementById('infoText');
     const cleanFill = document.getElementById('cleanFill');
     const healthFill = document.getElementById('healthFill');
+    const aframeScene = document.getElementById('aframeScene');
+    const fallbackMsg = document.getElementById('fallbackMsg');
 
+    // state (same as your logic)
     let cleanValue = 100;
     let healthValue = 100;
-    let sweetCount = 0; // hitung berapa kali makan permen
+    let sweetCount = 0;
 
-    document.addEventListener('DOMContentLoaded', () => {
-      const modelEl = document.querySelector('#tooth');
-      modelEl.addEventListener('model-loaded', () => {
-        toothModel = modelEl;
-        fadeInfo("Model gigi siap! Pilih aksi di bawah ini.");
+    // WebXR vars
+    let renderer, scene, camera, controller;
+    let reticle = null;
+    let toothGltf = null;
+    let placedAny = false; // require placement before buttons work
+    let hitTestSource = null;
+    let hitTestSourceRequested = false;
+    let xrSession = null;
+
+    // try detect WebXR support
+    if (navigator.xr) {
+      navigator.xr.isSessionSupported('immersive-ar').then(supported => {
+        if (supported) {
+          // initialize WebXR renderer & UI
+          initWebXR();
+        } else {
+          // fallback to A-Frame marker
+          enableMarkerFallback();
+        }
+      }).catch(err => {
+        console.warn('XR check failed', err);
+        enableMarkerFallback();
       });
-      updateBars();
-    });
+    } else {
+      enableMarkerFallback();
+    }
 
-    function fadeInfo(text) {
-      info.style.opacity = 0;
-      setTimeout(() => {
-        info.textContent = text;
-        info.style.opacity = 1;
-      }, 250);
+    function enableMarkerFallback() {
+      // show fallback UI, keep A-Frame scene visible
+      aframeScene.classList.remove('hidden');
+      fallbackMsg.style.display = 'block';
+      infoText.textContent = 'WebXR tidak tersedia — gunakan marker (print/tampilkan marker.png) untuk menampilkan model.';
+      // A-Frame will handle model loading; expose aframe model as toothModel for buttons
+      const aframeModel = document.getElementById('aframeTooth');
+      // when model loaded, mark as available
+      aframeModel.addEventListener('model-loaded', () => {
+        console.log('A-Frame model loaded (fallback).');
+        placedAny = true; // A-Frame marker handles visibility automatically when marker detected
+      });
+      // no further WebXR setup
+    }
+
+    async function initWebXR() {
+      // hide aframe (we'll use Three.js)
+      aframeScene.classList.add('hidden');
+      fallbackMsg.style.display = 'none';
+      infoText.textContent = 'Arahkan kamera ke permukaan datar. Tekan Enter AR (jika muncul) lalu ketuk layar untuk menempatkan model.';
+
+      // renderer
+      renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+      renderer.setSize(window.innerWidth, window.innerHeight);
+      renderer.xr.enabled = true;
+      renderer.setClearAlpha(0);
+      document.body.appendChild(renderer.domElement);
+
+      // scene & camera
+      scene = new THREE.Scene();
+      camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.01, 20);
+
+      // light
+      const light = new THREE.HemisphereLight(0xffffff, 0xbbbbff, 1);
+      scene.add(light);
+
+      // reticle
+      const ringGeom = new THREE.RingGeometry(0.07, 0.09, 32).rotateX(-Math.PI/2);
+      const ringMat = new THREE.MeshBasicMaterial({ color: 0x00ffcc, opacity: 0.9, transparent: true });
+      reticle = new THREE.Mesh(ringGeom, ringMat);
+      reticle.matrixAutoUpdate = false;
+      reticle.visible = false;
+      scene.add(reticle);
+
+      // controller (tap)
+      controller = renderer.xr.getController(0);
+      controller.addEventListener('select', onSelectXR);
+      scene.add(controller);
+
+      // Load tooth model (must be in root)
+      const loader = new GLTFLoader();
+      loader.load('tooth.glb',
+        (gltf) => {
+          toothGltf = gltf.scene;
+          toothGltf.scale.set(0.4, 0.4, 0.4); // tweak scale if needed
+          console.log('tooth.glb loaded for WebXR');
+        },
+        undefined,
+        (err) => {
+          console.error('Failed loading tooth.glb', err);
+          infoText.textContent = 'Gagal load tooth.glb — cek path di repo.';
+        }
+      );
+
+      // ARButton (creates Enter AR button)
+      const arButton = ARButton.createButton(renderer, { requiredFeatures: ['hit-test'] });
+      document.body.appendChild(arButton);
+
+      // handle resize
+      window.addEventListener('resize', onWindowResize);
+
+      // render loop
+      renderer.setAnimationLoop(render);
+    }
+
+    function onWindowResize() {
+      if (!camera || !renderer) return;
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    }
+
+    // user taps in AR session
+    function onSelectXR() {
+      if (!reticle || !reticle.visible) {
+        fadeInfo('Pindahkan kamera sedikit sampai reticle muncul di permukaan.');
+        return;
+      }
+      if (!toothGltf) {
+        fadeInfo('Model belum siap, tunggu sebentar...');
+        return;
+      }
+      // clone model and apply reticle transform
+      const placed = toothGltf.clone(true);
+      placed.matrixAutoUpdate = false;
+      placed.applyMatrix4(reticle.matrix);
+      scene.add(placed);
+      placedAny = true;
+      fadeInfo('Model ditempatkan! Gunakan tombol di bawah untuk interaksi.');
+      updateBars(); // ensure UI reflects state
+    }
+
+    // render loop for WebXR + hit-test
+    function render(timestamp, frame) {
+      if (frame) {
+        const session = renderer.xr.getSession();
+        const referenceSpace = renderer.xr.getReferenceSpace();
+
+        // request hit test source once
+        if (!hitTestSourceRequested) {
+          session.requestReferenceSpace('viewer').then((viewerSpace) => {
+            session.requestHitTestSource({ space: viewerSpace }).then((source) => {
+              hitTestSource = source;
+            });
+          });
+          session.addEventListener('end', () => {
+            hitTestSourceRequested = false;
+            hitTestSource = null;
+            reticle.visible = false;
+          });
+          hitTestSourceRequested = true;
+        }
+
+        if (hitTestSource) {
+          const hitTestResults = frame.getHitTestResults(hitTestSource);
+          if (hitTestResults.length > 0) {
+            const hit = hitTestResults[0];
+            const pose = hit.getPose(renderer.xr.getReferenceSpace());
+            if (pose) {
+              reticle.visible = true;
+              reticle.matrix.fromArray(pose.transform.matrix);
+            } else {
+              reticle.visible = false;
+            }
+          } else {
+            reticle.visible = false;
+          }
+        }
+      }
+      renderer.render(scene, camera);
+    }
+
+    function fadeInfo(text, ms = 220) {
+      infoText.style.opacity = 0;
+      setTimeout(() => { infoText.textContent = text; infoText.style.opacity = 1; }, ms);
     }
 
     function updateBars() {
-      cleanFill.style.width = cleanValue + "%";
-      healthFill.style.width = healthValue + "%";
+      cleanValue = Math.max(0, Math.min(100, cleanValue));
+      healthValue = Math.max(0, Math.min(100, healthValue));
+      if (cleanFill) cleanFill.style.width = cleanValue + '%';
+      if (healthFill) healthFill.style.width = healthValue + '%';
     }
 
-    function setAction(action) {
-      if (!toothModel) return;
+    function addHealthDamageFlash() {
+      const el = document.querySelector('.health .bar-inner');
+      if (!el) return;
+      el.classList.add('damage');
+      setTimeout(() => el.classList.remove('damage'), 500);
+    }
+
+    // expose setAction to buttons (works for both WebXR placed model and A-Frame marker)
+    window.setAction = function(action) {
+      // require placedAny for WebXR, but if fallback (A-Frame) the marker controls placement
+      if (!placedAny && aframeScene.classList.contains('hidden')) {
+        // WebXR active but no model placed yet
+        fadeInfo('Tempatkan model dulu (ketuk layar saat mode AR aktif) baru gunakan tombol.');
+        return;
+      }
 
       switch (action) {
         case 'brush':
           cleanValue = 100;
           healthValue = 100;
           sweetCount = 0;
-          fadeInfo("🪥 Gigi bersih total! Sehat kembali ✨");
+          fadeInfo('🪥 Gigi bersih total! Sehat kembali ✨');
           break;
-
         case 'sweet':
           cleanValue -= 12.5;
           sweetCount++;
           if (sweetCount >= 2) {
             sweetCount = 0;
             healthValue -= 25;
-            document.querySelector('.health .bar-inner').classList.add('damage');
-            fadeInfo("⚠️ Terlalu sering makan manis! Kesehatan menurun!");
-            setTimeout(() => {
-              document.querySelector('.health .bar-inner').classList.remove('damage');
-            }, 500);
+            addHealthDamageFlash();
+            fadeInfo('⚠️ Terlalu sering makan manis! Kesehatan menurun!');
           } else {
-            fadeInfo("🍭 Gula menempel! Kebersihan menurun sedikit...");
+            fadeInfo('🍭 Gula menempel! Kebersihan menurun sedikit...');
           }
           break;
-
         case 'healthy':
-          fadeInfo("🥦 Makanan sehat baik untuk gigi, namun harus tetap menggosok gigi ya!");
+          fadeInfo('🥦 Makanan sehat baik untuk gigi, namun harus tetap menggosok gigi ya!');
           break;
       }
 
@@ -303,11 +340,11 @@
       updateBars();
 
       if (healthValue <= 0) {
-        fadeInfo("💀 Gigi rusak total! Yuk sikat gigi untuk memulihkannya!");
+        fadeInfo('💀 Gigi rusak total! Yuk sikat gigi untuk memulihkannya!');
       }
-    }
+    };
+
   </script>
+
 </body>
 </html>
-
-
