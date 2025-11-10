@@ -2,7 +2,10 @@
 <html lang="id">
 <head>
   <meta charset="UTF-8">
-  <title>kARies - AR Edukasi Gigi</title>
+  <title>kARies - AR Edukasi Gigi (Responsive)</title>
+
+  <!-- penting: viewport untuk mobile -->
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
 
   <!-- A-Frame + AR.js -->
   <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
@@ -10,43 +13,73 @@
   <script src="https://cdn.jsdelivr.net/npm/aframe-extras@6.1.1/dist/aframe-extras.min.js"></script>
 
   <style>
-    body {
-      margin: 0;
-      overflow: hidden;
-      font-family: "Poppins", sans-serif;
-      background: #f0f4f9;
+    :root{
+      /* ui scale akan di-set via JS */
+      --ui-scale: 1;
+      --bar-min-width: 240px;
+      --bar-max-width: 420px;
+      --button-size: clamp(52px, calc(12vw * var(--ui-scale)), 88px);
+      --icon-size: calc(var(--button-size) * 0.95);
+      --status-height: clamp(20px, calc(3.2vh * var(--ui-scale)), 30px);
+      --status-padding: clamp(6px, calc(1.6vh * var(--ui-scale)), 12px);
+      --info-font-size: clamp(12px, calc(2.4vw * var(--ui-scale)), 15px);
+      --ui-gap: clamp(10px, calc(1.6vh * var(--ui-scale)), 20px);
     }
 
+    html,body {
+      height: 100%;
+      margin: 0;
+      font-family: "Poppins", sans-serif;
+      background: #f0f4f9;
+      -webkit-font-smoothing: antialiased;
+      -webkit-text-size-adjust: 100%;
+    }
+
+    /* a-scene full-viewport */
     a-scene {
       position: fixed;
       top: 0;
       left: 0;
-      width: 100%;
-      height: 100%;
+      width: 100vw;
+      height: 100vh;
+      margin: 0;
+      display: block;
+      z-index: 0;
+    }
+
+    /* ensure the canvas covers safe area on iOS */
+    a-scene, a-scene canvas {
+      width: 100vw;
+      height: 100vh;
     }
 
     /* === UI OVERLAY === */
     #ui {
       position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
+      inset: 0; /* top:0; right:0; bottom:0; left:0 */
       display: flex;
       flex-direction: column;
       justify-content: flex-end;
       align-items: center;
       pointer-events: none;
+      z-index: 10;
+      padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+      gap: var(--ui-gap);
+      box-sizing: border-box;
+      transform-origin: bottom center;
+      transform: scale(var(--ui-scale));
     }
 
-    /* === STATUS BAR CONTAINER === */
+    /* STATUS BAR CONTAINER */
     #bars {
       position: absolute;
-      top: 25px;
+      top: calc(18px + env(safe-area-inset-top));
+      left: 50%;
+      transform: translateX(-50%);
       display: flex;
       flex-direction: column;
       gap: 10px;
-      width: auto;
+      width: min(var(--bar-max-width), calc(92vw));
       align-items: center;
       pointer-events: none;
     }
@@ -56,29 +89,30 @@
       align-items: center;
       background: rgba(60, 60, 60, 0.9);
       border-radius: 20px;
-      padding: 6px 12px;
-      min-width: 350px;
-      height: 24px;
+      padding: var(--status-padding);
+      min-width: var(--bar-min-width);
+      height: var(--status-height);
       box-shadow: 0 3px 6px rgba(0,0,0,0.2);
+      gap: 8px;
     }
 
     .status-icon {
-      width: 25px;
-      height: 25px;
-      margin-right: 8px;
+      width: calc(var(--status-height) + 6px);
+      height: calc(var(--status-height) + 6px);
+      margin-right: 6px;
     }
 
     .status-label {
       color: #fff;
-      font-size: 13px;
+      font-size: calc(var(--info-font-size) - 1px);
       font-weight: 600;
-      margin-right: 10px;
-      min-width: 75px;
+      margin-right: 8px;
+      min-width: 60px;
     }
 
     .bar-fill {
       flex: 1;
-      height: 20px;
+      height: 100%;
       border-radius: 10px;
       background: #555;
       overflow: hidden;
@@ -92,7 +126,6 @@
       transition: width 0.3s ease;
     }
 
-    /* warna bar */
     .clean .bar-inner {
       background: linear-gradient(to right, #4fc3f7, #0288d1);
     }
@@ -101,25 +134,26 @@
       background: linear-gradient(to right, #ef9a9a, #e57373);
     }
 
-    /* animasi health damage */
     .bar-inner.damage {
       animation: blinkRed 0.4s ease;
     }
 
     @keyframes blinkRed {
-      0%, 100% { filter: brightness(1); }
+      0%,100% { filter: brightness(1); }
       50% { filter: brightness(2); }
     }
 
-    /* === BUTTONS === */
+    /* BUTTONS */
     #buttons {
       width: 100%;
-      max-width: 400px;
+      max-width: 460px;
       display: flex;
-      gap: 30px;
+      gap: calc(18px * var(--ui-scale));
       justify-content: center;
-      margin-bottom: 25px;
+      margin-bottom: calc(18px + env(safe-area-inset-bottom));
       pointer-events: auto;
+      padding: 0 10px;
+      box-sizing: border-box;
     }
 
     .action-btn {
@@ -131,55 +165,65 @@
       border: none;
       cursor: pointer;
       transition: transform 0.15s ease;
+      pointer-events: auto;
+      -webkit-tap-highlight-color: transparent;
     }
 
-    .action-btn:hover {
-      transform: translateY(-3px);
-    }
+    .action-btn:hover { transform: translateY(-4px); }
 
-    .action-btn:active {
-      transform: scale(0.9);
-      transition: transform 0.05s ease;
-    }
+    .action-btn:active { transform: scale(0.96); transition: transform 0.05s ease; }
 
     .action-btn img {
-      width: 65px;
-      height: 65px;
+      width: var(--icon-size);
+      height: var(--icon-size);
       border-radius: 50%;
-      box-shadow: 0 3px 8px rgba(0,0,0,0.25);
-      margin-bottom: 4px;
+      box-shadow: 0 3px 8px rgba(0,0,0,0.22);
+      margin-bottom: 6px;
       object-fit: contain;
-      padding: 10px;
+      padding: calc(8px * var(--ui-scale));
       background: #fff;
-      filter: drop-shadow(0 0 6px rgba(0,0,0,0.3));
+      filter: drop-shadow(0 0 6px rgba(0,0,0,0.12));
     }
 
     .action-btn span {
-      font-size: 13px;
+      font-size: calc(var(--info-font-size) - 1px);
       font-weight: 600;
       color: #fff;
-      text-shadow: 0 1px 4px rgba(0,0,0,0.4);
+      text-shadow: 0 1px 4px rgba(0,0,0,0.3);
+      white-space: nowrap;
     }
 
-    /* === WARNA LATAR BULATAN IKON === */
     .action-btn.brush img { background: #b2e8ff; }
     .action-btn.healthy img { background: #c8f7c2; }
     .action-btn.sweet img { background: #ffd4e1; }
 
-    /* === INFO TEXT === */
+    /* INFO TEXT */
     #infoText {
-      background: rgba(255, 255, 255, 0.9);
+      background: rgba(255,255,255,0.95);
       border-radius: 15px;
       padding: 8px 14px;
-      margin-bottom: 15px;
-      font-size: 13px;
+      margin-bottom: 10px;
+      font-size: var(--info-font-size);
       font-weight: 500;
       color: #0b4f8a;
       box-shadow: 0 2px 10px rgba(0,0,0,0.15);
       text-align: center;
-      max-width: 380px;
+      max-width: min(380px, 92vw);
       pointer-events: auto;
-      transition: opacity 0.3s ease;
+      transition: opacity 0.3s ease, transform 0.2s ease;
+    }
+
+    /* small screens: reduce top bars width a bit */
+    @media (max-width: 420px) {
+      :root { --bar-min-width: 200px; --bar-max-width: 92vw; }
+      #bars { top: calc(12px + env(safe-area-inset-top)); }
+    }
+
+    @media (min-width: 900px) {
+      /* desktop: push buttons slightly lower and increase scale */
+      :root { --ui-scale: 1.0; }
+      #buttons { margin-bottom: 30px; }
+      #infoText { font-size: calc(var(--info-font-size) + 1px); }
     }
   </style>
 </head>
@@ -192,6 +236,7 @@
         gltf-model="tooth.glb"
         scale="0.5 0.5 0.5"
         position="0 0 0"
+        rotation="0 0 0"
         animation-mixer>
       </a-entity>
     </a-marker>
@@ -242,23 +287,43 @@
 
     let cleanValue = 100;
     let healthValue = 100;
-    let sweetCount = 0; // hitung berapa kali makan permen
+    let sweetCount = 0;
+
+    // konstanta dasar untuk skala model (sesuaikan bila perlu)
+    const MODEL_BASE_SCALE = 0.5; // skala untuk layar standar
+    const MODEL_SCALE_MIN = 0.25;
+    const MODEL_SCALE_MAX = 1.2;
 
     document.addEventListener('DOMContentLoaded', () => {
       const modelEl = document.querySelector('#tooth');
+
+      // saat model siap
       modelEl.addEventListener('model-loaded', () => {
         toothModel = modelEl;
+        // set skala awal berdasarkan ukuran layar
+        adjustLayout();
         fadeInfo("Model gigi siap! Pilih aksi di bawah ini.");
       });
+
+      // update UI bar
       updateBars();
+
+      // responsiveness: adjust when resize atau orientation change
+      window.addEventListener('resize', adjustLayout);
+      window.addEventListener('orientationchange', () => {
+        // orientationchange kadang tidak langsung resize, beri delay kecil
+        setTimeout(adjustLayout, 200);
+      });
     });
 
     function fadeInfo(text) {
       info.style.opacity = 0;
+      info.style.transform = 'translateY(6px)';
       setTimeout(() => {
         info.textContent = text;
         info.style.opacity = 1;
-      }, 250);
+        info.style.transform = 'translateY(0)';
+      }, 200);
     }
 
     function updateBars() {
@@ -267,7 +332,10 @@
     }
 
     function setAction(action) {
-      if (!toothModel) return;
+      if (!toothModel) {
+        fadeInfo("Model belum siap — arahkan kamera ke marker dulu.");
+        return;
+      }
 
       switch (action) {
         case 'brush':
@@ -304,6 +372,41 @@
 
       if (healthValue <= 0) {
         fadeInfo("💀 Gigi rusak total! Yuk sikat gigi untuk memulihkannya!");
+      }
+    }
+
+    // fungsi untuk menyesuaikan UI scale dan model scale berdasarkan viewport
+    function adjustLayout() {
+      const vw = window.innerWidth;
+      const vh = window.innerHeight;
+
+      // menentukan skala UI: target desain lebar basis 420px
+      // hasil antara 0.8 (very small) sampai 1.15 (desktop)
+      const uiScale = Math.min(Math.max((vw / 420), 0.75), 1.15);
+      document.documentElement.style.setProperty('--ui-scale', uiScale);
+
+      // hitung skala model berdasarkan ukuran layar dan orientasi
+      // kita ingin model terlihat proporsional — gunakan lebar viewport sebagai referensi
+      const widthFactor = vw / 375; // 375 = typical mobile width baseline
+      const heightFactor = vh / 667; // 667 baseline
+      let modelScaleFactor = Math.min(widthFactor, heightFactor);
+
+      // buat lebih halus dan batasi
+      modelScaleFactor = Math.max(MODEL_SCALE_MIN, Math.min(MODEL_SCALE_MAX, MODEL_BASE_SCALE * modelScaleFactor));
+
+      // set attribute scale pada entitas a-entity tooth (format: "x y z")
+      const modelEl = document.querySelector('#tooth');
+      if (modelEl) {
+        const s = modelScaleFactor.toFixed(3);
+        modelEl.setAttribute('scale', `${s} ${s} ${s}`);
+      }
+
+      // jika layar sangat lebar (desktop), kita bisa sedikit naikkan posisi info
+      const bars = document.getElementById('bars');
+      if (vw > 900) {
+        bars.style.top = '28px';
+      } else {
+        bars.style.top = `calc(${12 + (Math.max(0, (1-uiScale) * 20))}px + env(safe-area-inset-top))`;
       }
     }
   </script>
