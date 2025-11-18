@@ -1,0 +1,398 @@
+/* ui.css - cleaned (with reset/exit buttons moved to top center) */
+body {
+  margin: 0;
+  overflow: hidden;
+  font-family: "Poppins", sans-serif;
+  background: #000;
+}
+
+/* canvas full */
+canvas { 
+  display:block; 
+  width:100vw; 
+  height:100vh; 
+  position: absolute; 
+}
+
+/* UI Overlay */
+#ui {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  align-items: center;
+  pointer-events: none;
+}
+
+/* NEW: Splash Screen */
+#splashScreen {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  z-index: 100;
+  pointer-events: auto;
+}
+
+#splashLogo {
+  width: 280px;
+  height: 280px;
+  object-fit: contain;
+  margin-bottom: 40px;
+  filter: drop-shadow(0 8px 20px rgba(0,0,0,0.3));
+}
+
+.start-btn {
+  padding: 16px 40px;
+  font-size: 20px;
+  font-weight: 700;
+  color: #fff;
+  background: linear-gradient(135deg, #ff6b6b, #ee5a52);
+  border: none;
+  border-radius: 50px;
+  cursor: pointer;
+  box-shadow: 0 8px 25px rgba(238, 90, 82, 0.4);
+  transition: all 0.3s ease;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.start-btn:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 12px 30px rgba(238, 90, 82, 0.6);
+}
+
+.start-btn:active {
+  transform: translateY(-1px);
+}
+
+/* Hide splash when AR starts */
+#splashScreen.hidden {
+  display: none;
+}
+
+/* STATUS BARS */
+#bars {
+  position: absolute;
+  top: 135px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  align-items: center;
+  pointer-events: none;
+  z-index: 50;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+/* TAMBAHKAN CLASS UNTUK SHOW BARS SAAT AR */
+#bars.visible-ar {
+  opacity: 1;
+}
+
+.status-bar {
+  display: flex;
+  align-items: center;
+  background: rgba(60, 60, 60, 0.9);
+  border-radius: 20px;
+  padding: 6px 12px;
+  min-width: 300px;
+  height: 36px;
+  box-shadow: 0 3px 6px rgba(0,0,0,0.2);
+}
+
+.status-icon { width: 28px; height: 28px; margin-right: 8px; }
+.status-label { color:#fff; font-size:13px; font-weight:600; margin-right:8px; min-width:75px; }
+
+.bar-fill { flex:1; height:26px; border-radius:10px; background:#555; overflow:hidden; position:relative; }
+.bar-inner { height:100%; width:100%; border-radius:10px; transition: width 0.3s ease; }
+
+.clean .bar-inner { background: linear-gradient(to right, #4fc3f7, #0288d1); }
+.health .bar-inner { background: linear-gradient(to right, #ef9a9a, #e57373); }
+.bar-inner.damage { animation: blinkRed 0.4s ease; }
+@keyframes blinkRed { 0%,100%{ filter:brightness(1);} 50%{ filter:brightness(2);} }
+
+/* Tombol Cek Odontogram */
+.odontogram-btn {
+  position: absolute;
+  top: 250px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 10px 20px;
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  color: white;
+  border: none;
+  border-radius: 20px;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+  z-index: 50;
+  pointer-events: auto;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.odontogram-btn.visible-ar {
+  opacity: 1;
+}
+
+/* Buttons container */
+#buttons {
+  width: 100%;
+  max-width: 420px;
+  display: flex;
+  gap: 20px;
+  justify-content: center;
+  margin-bottom: 90px;
+  pointer-events: auto;
+  z-index: 45;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+/* TAMBAHKAN CLASS UNTUK SHOW BUTTONS SAAT AR */
+#buttons.visible-ar {
+  opacity: 1;
+}
+
+.action-btn {
+  display:flex; flex-direction:column; align-items:center; text-align:center;
+  background:none; border:none; cursor:pointer; transition: transform 0.15s ease;
+}
+.action-btn img {
+  width:65px; height:65px; border-radius:50%; box-shadow:0 3px 8px rgba(0,0,0,0.25);
+  margin-bottom:4px; object-fit:contain; padding:10px; background:#fff;
+}
+.action-btn span { font-size:13px; font-weight:600; color:#fff; text-shadow:0 1px 4px rgba(0,0,0,0.4); }
+
+.action-btn.brush img { background:#b2e8ff; }
+.action-btn.healthy img { background:#c8f7c2; }
+.action-btn.sweet img { background:#ffd4e1; }
+
+/* info text */
+#infoText {
+  background: rgba(255,255,255,0.95);
+  border-radius: 15px;
+  padding: 8px 14px;
+  margin-bottom: 14px;
+  font-size:13px;
+  font-weight:500;
+  color: #0b4f8a;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.15);
+  text-align:center;
+  max-width:320px;
+  pointer-events:auto;
+  transition: opacity 0.3s ease;
+  z-index: 46;
+  opacity: 0;
+}
+
+/* TAMBAHKAN CLASS UNTUK SHOW INFO TEXT SAAT AR */
+#infoText.visible-ar {
+  opacity: 1;
+}
+
+/* XR button - centered top (HIDDEN BY DEFAULT) */
+.xr-btn {
+  position: absolute;
+  top: 18px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 70;
+  padding: 8px 14px;
+  border-radius: 12px;
+  border: none;
+  background: linear-gradient(180deg,#3c86ff,#0b66ff);
+  color: #fff;
+  font-weight:700;
+  cursor:pointer;
+  box-shadow: 0 6px 18px rgba(11,102,255,0.25);
+  transition: opacity 0.28s ease, transform 0.18s ease;
+}
+
+.xr-btn.hidden {
+  opacity: 0;
+  pointer-events: none;
+  transform: translateX(-50%) scale(0.96);
+}
+
+/* Scale Buttons (center bottom) */
+#scaleButtons {
+  position: absolute;
+  bottom: 35px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 20px;
+  z-index: 60;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.18s ease, transform 0.18s ease;
+}
+
+.scale-btn {
+  padding: 10px 20px;
+  border-radius: 12px;
+  border: none;
+  font-weight: 600;
+  cursor: pointer;
+  color: #fff;
+  background: linear-gradient(180deg, #444, #222);
+  box-shadow: 0 3px 10px rgba(0,0,0,0.25);
+  transition: transform 0.15s ease;
+}
+
+.scale-btn:active {
+  transform: scale(0.94);
+}
+
+/* Extra Buttons (Reset & Exit) – moved to top center */
+#extraButtons {
+  position: absolute;
+  top: 85px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 16px;
+  z-index: 65;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.18s ease, transform 0.18s ease;
+}
+
+.extra-btn {
+  padding: 10px 20px;
+  border-radius: 12px;
+  border: none;
+  font-weight: 600;
+  cursor: pointer;
+  color: #fff;
+  background: linear-gradient(180deg, #444, #222);
+  box-shadow: 0 3px 10px rgba(0,0,0,0.25);
+  transition: transform 0.15s ease, opacity 0.2s ease;
+}
+
+.extra-btn:active {
+  transform: scale(0.94);
+}
+
+/* Popup Styles */
+.popup {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0,0,0,0.8);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+  pointer-events: auto;
+}
+
+.popup-content {
+  background: white;
+  padding: 30px;
+  border-radius: 20px;
+  width: 320px; /* Diperkecil dan dibuat sama panjang x lebarnya */
+  height: 450px; /* Diperkecil dan dibuat sama panjang x lebarnya */
+  max-height: 80vh;
+  overflow-y: auto;
+  position: relative;
+  pointer-events: auto;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.close-btn {
+  position: absolute;
+  top: 15px;
+  right: 20px;
+  background: none;
+  border: none;
+  font-size: 28px;
+  cursor: pointer;
+  color: #666;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  transition: background-color 0.2s ease;
+  z-index: 1001;
+  pointer-events: auto;
+}
+
+.close-btn:hover {
+  background-color: #f0f0f0;
+}
+
+.popup h3 {
+  margin-top: 0;
+  color: #333;
+  text-align: center;
+  margin-bottom: 20px;
+  font-size: 20px;
+}
+
+.odontogram-single {
+  text-align: center;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  height: 100%;
+}
+
+.odontogram-single img {
+  width: 300px; /* Diperkecil agar sesuai dengan popup yang lebih kecil */
+  height: 300px; /* Diperkecil agar sesuai dengan popup yang lebih kecil */
+  object-fit: contain;
+  margin-bottom: 15px;
+}
+
+.odontogram-single p {
+  margin: 0;
+  font-size: 16px;
+  color: #333;
+  font-weight: 500;
+  line-height: 1.4;
+  background: #f8f9fa;
+  padding: 15px;
+  border-radius: 10px;
+}
+
+
+/* show AR-only controls */
+.visible-controls {
+  opacity: 1 !important;
+  pointer-events: auto !important;
+  transform: translateX(-50%) translateY(0) !important;
+  transition: opacity 0.18s ease, transform 0.18s ease;
+}
+
+.hidden {
+  display: none !important;
+}
+
+/* Class untuk memblokir interaksi dengan elemen di belakang popup */
+.popup-active #ui > *:not(#odontogramPopup) {
+  pointer-events: none !important;
+  opacity: 0.7;
+}
